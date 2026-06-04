@@ -5,6 +5,7 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QProcess>
+#include <QDebug>
 
 // ── Lecture du crontab 
 QStringList getCrontab() {
@@ -26,9 +27,13 @@ QStringList getCrontab() {
 // ── Écriture du crontab:echo "      " | crontab -
 void setCrontab(const QStringList &lines) {
     QProcess p;
-    p.start("crontab", {"-"});  //lire depuis stdin
-    p.waitForStarted();         //attend que le processus soit pret à recevoir les données
-    p.write(lines.join("\n").toUtf8());
+    p.start("crontab", {"-"});
+    p.waitForStarted();
+
+    QString content = lines.join("\n") + "\n";
+    qDebug() << "Envoi à crontab:" << content;  // ← vérifie ce qui est envoyé
+
+    p.write(content.toUtf8());
     p.closeWriteChannel();
     p.waitForFinished();
 }
@@ -43,10 +48,8 @@ Scheduler::Scheduler() {
 
     QPushButton *btnAdd     = new QPushButton("Add");
     QPushButton *btnRemove  = new QPushButton("Remove");
-    QPushButton *btnRefresh = new QPushButton("Refresh");
 
     QHBoxLayout *btnLayout = new QHBoxLayout;
-    btnLayout->addWidget(btnRefresh);
     btnLayout->addWidget(btnAdd);
     btnLayout->addWidget(btnRemove);
 
@@ -54,17 +57,17 @@ Scheduler::Scheduler() {
     mainLayout->addWidget(list);
     mainLayout->addLayout(btnLayout);
 
-    connect(btnRefresh, &QPushButton::clicked, this, &Scheduler::refresh);
-
     connect(btnAdd,     &QPushButton::clicked, this, &Scheduler::addTask);
 
     connect(btnRemove,  &QPushButton::clicked, this, &Scheduler::removeTask);
 
-    refresh();
+    connect(this,&Scheduler::refresh,this,&Scheduler::onRefresh);
+
+    emit refresh();
 }
 
 // ── Rafraîchir la list: QListWidget: addItem et QStringList : append()
-void Scheduler::refresh() {  //pour voire la liste 
+void Scheduler::onRefresh() {  //pour voire la liste 
     list->clear();
     QStringList lines = getCrontab();
     for (int i =0 ; i<lines.size() ; i++)
@@ -141,7 +144,7 @@ void Scheduler::addTask() {
 
     current.append(cronLine);
     setCrontab(current);
-    refresh();
+    emit refresh(); 
     QMessageBox::information(this, "Done", "Task added:\n" + cronLine);
 }
 
@@ -157,6 +160,6 @@ void Scheduler::removeTask() {
     QStringList lines = getCrontab();
     lines.removeAt(row);
     setCrontab(lines);
-    refresh();
+    emit refresh();  
 }
 

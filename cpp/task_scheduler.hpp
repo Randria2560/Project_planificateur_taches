@@ -12,10 +12,13 @@ class Scheduler : public QWidget {
     Q_OBJECT
 public:
     Scheduler();
-private slots:
+signals:
     void refresh();
+    
+private slots:
     void addTask();
     void removeTask();
+    void onRefresh();
     
 private:
     QListWidget *list;

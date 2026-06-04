@@ -17,8 +17,6 @@ def add_task():
     cmd = simpledialog.askstring("Command", "Command to schedule:")
     if not cmd: return
 
-
-    #genre fieldset:
     freq = simpledialog.askstring("Frequency", "1.Hourly 2.Daily 3.Weekly 4.Monthly 5.Custom:")
     m, h, dom, mon, dow = "*", "*", "*", "*", "*"
 
@@ -52,10 +50,10 @@ def add_task():
     if cron_line in existing:
         messagebox.showinfo("Info", "Task already exists.")
     else:
-        new = (existing + "\n" + cron_line).strip()
+        new = (existing + "\n" + cron_line).strip() + "\n"
         subprocess.run("crontab -", input=new, shell=True, text=True)
         messagebox.showinfo("Done", f"Task added:\n{cron_line}")
-    refresh()
+        refresh()   # mise à jour après écriture
 
 def remove_task():
     sel = listbox.curselection()
@@ -64,8 +62,8 @@ def remove_task():
         return
     lines = cron_list().splitlines()
     lines.pop(sel[0])
-    subprocess.run("crontab -", input="\n".join(lines), shell=True, text=True)
-    refresh()
+    subprocess.run("crontab -", input="\n".join(lines) + "\n", shell=True, text=True)
+    refresh()       # mise à jour après suppression
 
 
 root = tk.Tk()
@@ -77,10 +75,9 @@ listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
 frame = tk.Frame(root)
 frame.pack(pady=5)
-tk.Button(frame, text="Refresh", command=refresh).pack(side=tk.LEFT, padx=5)
-tk.Button(frame, text="Add",     command=add_task).pack(side=tk.LEFT, padx=5)
-tk.Button(frame, text="Remove",  command=remove_task).pack(side=tk.LEFT, padx=5)
-tk.Button(frame, text="Exit",    command=root.quit).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Add",    command=add_task).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Remove", command=remove_task).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Exit",   command=root.quit).pack(side=tk.LEFT, padx=5)
 
-refresh()
+refresh()   # chargement initial
 root.mainloop()
