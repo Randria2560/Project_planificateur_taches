@@ -1,63 +1,86 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import messagebox, simpledialog
 import subprocess
 
-class TaskScheduler:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Task Scheduler")
-        self.root.geometry("600x400")
-        
-        # Boutons
-        btn_frame = tk.Frame(root)
-        btn_frame.pack(pady=10)
-        
-        tk.Button(btn_frame, text="List Tasks", command=self.list_tasks, width=15).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="Add Task", command=self.add_task, width=15).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="Remove Task", command=self.remove_task, width=15).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="Exit", command=root.quit, width=15).pack(side=tk.LEFT, padx=5)
-        
-        # Zone de texte
-        self.text_area = scrolledtext.ScrolledText(root, width=70, height=20)
-        self.text_area.pack(pady=10)
-        
-    def list_tasks(self):
-        try:
-            result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
-            self.text_area.delete(1.0, tk.END)
-            self.text_area.insert(tk.END, result.stdout if result.stdout else "No tasks")
-        except:
-            messagebox.showerror("Error", "Cannot read crontab")
-    
-    def add_task(self):
-        # Fenêtre d'ajout
-        add_window = tk.Toplevel(self.root)
-        add_window.title("Add Task")
-        add_window.geometry("400x300")
-        
-        tk.Label(add_window, text="Command:").pack(pady=5)
-        cmd_entry = tk.Entry(add_window, width=50)
-        cmd_entry.pack()
-        
-        tk.Label(add_window, text="Schedule:").pack(pady=5)
-        schedule_var = tk.StringVar(value="daily")
-        ttk.Combobox(add_window, textvariable=schedule_var, 
-                     values=["hourly", "daily", "weekly", "monthly"]).pack()
-        
-        def save_task():
-            cmd = cmd_entry.get()
-            # Logique d'ajout...
-            messagebox.showinfo("Success", "Task added!")
-            add_window.destroy()
-        
-        tk.Button(add_window, text="Add", command=save_task).pack(pady=10)
-    
-    def remove_task(self):
-        # Logique de suppression
-        pass
+def cron_list():
+    r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    return r.stdout.strip()
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = TaskScheduler(root)
-    root.mainloop()
+def refresh():
+    tasks = cron_list()
+    listbox.delete(0, tk.END)
+    for line in (tasks.splitlines() if tasks else []):
+        listbox.insert(tk.END, line)
+
+def add_task():
+    cmd = simpledialog.askstring("Command", "Command to schedule:")
+    if not cmd: return
+
+
+    #genre fieldset:
+    freq = simpledialog.askstring("Frequency", "1.Hourly 2.Daily 3.Weekly 4.Monthly 5.Custom:")
+    m, h, dom, mon, dow = "*", "*", "*", "*", "*"
+
+    if freq == "1":
+        m = simpledialog.askstring("Minute", "Minute (0-59):") or "*"
+    elif freq == "2":
+        h = simpledialog.askstring("Hour",   "Hour (0-23):")   or "*"
+        m = simpledialog.askstring("Minute", "Minute (0-59):") or "*"
+    elif freq == "3":
+        dow = simpledialog.askstring("Day",    "Day of week (0-6):") or "*"
+        h   = simpledialog.askstring("Hour",   "Hour (0-23):")       or "*"
+        m   = simpledialog.askstring("Minute", "Minute (0-59):")     or "*"
+    elif freq == "4":
+        dom = simpledialog.askstring("Day",    "Day of month (1-31):") or "*"
+        h   = simpledialog.askstring("Hour",   "Hour (0-23):")         or "*"
+        m   = simpledialog.askstring("Minute", "Minute (0-59):")       or "*"
+    elif freq == "5":
+        m   = simpledialog.askstring("Min",  "Minutes:")      or "*"
+        h   = simpledialog.askstring("Hour", "Hours:")        or "*"
+        dom = simpledialog.askstring("DOM",  "Day of month:") or "*"
+        mon = simpledialog.askstring("Mon",  "Month:")        or "*"
+        dow = simpledialog.askstring("DOW",  "Day of week:")  or "*"
+
+    log = messagebox.askyesno("Logs", "Enable logs?")
+    if log:
+        cmd += " >> scheduler.log 2>&1"
+
+    cron_line = f"{m} {h} {dom} {mon} {dow} {cmd}"
+    existing = cron_list()
+
+    if cron_line in existing:
+        messagebox.showinfo("Info", "Task already exists.")
+    else:
+        new = (existing + "\n" + cron_line).strip()
+        subprocess.run("crontab -", input=new, shell=True, text=True)
+        messagebox.showinfo("Done", f"Task added:\n{cron_line}")
+    refresh()
+
+def remove_task():
+    sel = listbox.curselection()
+    if not sel:
+        messagebox.showwarning("Warning", "Select a task first.")
+        return
+    lines = cron_list().splitlines()
+    lines.pop(sel[0])
+    subprocess.run("crontab -", input="\n".join(lines), shell=True, text=True)
+    refresh()
+
+
+root = tk.Tk()
+root.title("Task Scheduler")
+root.geometry("600x400")
+
+listbox = tk.Listbox(root, font=("monospace", 11))
+listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+frame = tk.Frame(root)
+frame.pack(pady=5)
+tk.Button(frame, text="Refresh", command=refresh).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Add",     command=add_task).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Remove",  command=remove_task).pack(side=tk.LEFT, padx=5)
+tk.Button(frame, text="Exit",    command=root.quit).pack(side=tk.LEFT, padx=5)
+
+refresh()
+root.mainloop()
