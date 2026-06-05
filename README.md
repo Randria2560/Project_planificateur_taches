@@ -15,7 +15,7 @@
 - 📋 **Lister** les tâches cron existantes avec numérotation
 - ➕ **Ajouter** une tâche — fréquences prédéfinies (horaire, quotidienne, hebdomadaire, mensuelle) ou personnalisée
 - 🗑️ **Supprimer** une tâche par son numéro de ligne
-- 📝 **Journalisation** optionnelle vers `scheduler.log`
+- 📝 **Journalisation** optionnelle vers `task_scheduler.log`
 - 🔁 Détection des doublons avant insertion
 
 ---
@@ -25,10 +25,11 @@
 ```
 scheduler/
 ├── bash/            # Script Bash pur (menu terminal)
-├── bash_yad/        # Script Bash + YAD (dialogs GTK)
-├── c/               # Interface ncurses en C
-├── cpp_qt/          # Interface graphique Qt 6 (C++)
-├── python_tk/       # Interface graphique Tkinter (Python)
+|    ├── task_scheduler.sh/        # Script Bash + YAD (dialogs GTK)
+|    ├── task_scheduler_no_ui.sh    #Bash no UI
+├── c/               # 
+├── cpp/          # Interface graphique Qt 6 (C++)
+├── python/       # Interface graphique Tkinter (Python)
 ├── docs/
 │   └── livrable.tex # Livrable technique LaTeX
 └── README.md
@@ -67,11 +68,11 @@ Les modules **Python**, **Bash** et **Bash/YAD** ne nécessitent aucune compilat
 
 | Interface | Commande |
 |-----------|----------|
-| Bash pur | `bash bash/scheduler.sh` |
-| Bash + YAD | `bash bash_yad/scheduler.sh` |
-| C (ncurses) | `./c/scheduler_c` |
+| Bash pur | `bash bash/task_scheduler.sh` |
+| Bash + YAD | `bash bash_yad/task_scheduler.sh` |
+| C | `./c/scheduler_c` |
 | C++ / Qt | `./cpp_qt/build/scheduler` |
-| Python / Tk | `python3 python_tk/scheduler.py` |
+| Python / Tk | `python3 python_tk/task_scheduler.py` |
 
 ---
 
@@ -89,7 +90,7 @@ MIN  HEURE  JOUR_MOIS  MOIS  JOUR_SEM  COMMANDE
 30 * * * * /usr/bin/backup.sh
 
 # Tous les jours à 3h du matin, avec log
-0 3 * * * /opt/clean.sh >> scheduler.log 2>&1
+0 3 * * * /opt/clean.sh >> task_task_scheduler.log 2>&1
 
 # Tous les lundis à 08h15
 15 8 * * 1 /usr/bin/report.sh
@@ -103,7 +104,7 @@ MIN  HEURE  JOUR_MOIS  MOIS  JOUR_SEM  COMMANDE
 |--------|---------|----|
 | `bash/` | Bash | Terminal interactif |
 | `bash_yad/` | Bash + YAD | Dialogs GTK natifs |
-| `c/` | C | ncurses |
+| `c/` | C | No Interface |
 | `cpp_qt/` | C++ 17 + Qt 6 | GUI native Qt |
 | `python_tk/` | Python 3 + Tkinter | GUI Tkinter |
 
